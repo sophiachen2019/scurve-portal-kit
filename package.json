@@ -1,6 +1,6 @@
 {
   "name": "@scurve/portal-kit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared design tokens, API client, and UX primitives for S-Curve Data agent platform portals.",
   "type": "module",
   "license": "UNLICENSED",
@@ -14,12 +14,14 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./tokens.css": "./tokens.css"
+    "./tokens.css": "./tokens.css",
+    "./primitives.css": "./primitives.css"
   },
   "files": [
     "dist",
     "src",
-    "tokens.css"
+    "tokens.css",
+    "primitives.css"
   ],
   "scripts": {
     "build": "tsc",

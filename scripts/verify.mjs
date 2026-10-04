@@ -84,6 +84,23 @@ const {
   pollUntilSettled,
   resolveApiBase,
   createPortalClient,
+  // Section 5a primitives. Only the DOM-free half is asserted here; the
+  // reason is in the block comment above the 5a section below.
+  CONNECTION_LABELS,
+  CONNECTION_TONE,
+  PHASE_TONE,
+  accessLabel,
+  accessState,
+  brandMarkup,
+  clamp,
+  dedupeActions,
+  dedupeByAction,
+  escapeHtml,
+  isSurfaceMode,
+  phaseForStep,
+  renderAgentMarkdown,
+  renderMarkdownWithMarked,
+  slugifyDomId,
 } = kit;
 
 // --- 4.1 base URL resolution ---------------------------------------------
@@ -662,9 +679,222 @@ await check('4.5 a transient failure can be ridden out', async () => {
   assert.equal((await handle.result).value.state, 'succeeded');
 });
 
+// --- 5a primitives --------------------------------------------------------
+//
+// Only the DOM-free half of section 5a is asserted here, and that is a
+// deliberate limit rather than a gap left open.
+//
+// The primitives build real DOM. Asserting that against a hand-rolled or
+// library DOM stub would be weak evidence for the one claim that matters —
+// that adopting them leaves three shipped portals rendering exactly as they
+// did — because a stub agrees with whatever it was written to agree with.
+// Whitespace handling in a flex container, `classList.toggle` with a force
+// argument and `CSS.escape` are all places a stub and a browser can differ
+// while the assertion still passes.
+//
+// So the split is: everything below is pure input-to-output and is checked
+// here, where the check means something without a browser. The DOM structure
+// and the visual result are checked in a browser against each portal's real
+// stylesheet, before and after adoption, by `scripts/dom-snapshot.js`, which runs
+// in the page. Neither half alone is enough.
+
+await check('5a escapeHtml covers all five characters, unlike what it replaces', () => {
+  // causal's escape went through `div.textContent` and left `"` and `'`
+  // intact, which is not safe in an attribute. Three portals, three escape
+  // functions, two of which disagreed.
+  assert.equal(escapeHtml(`<a href="x" title='y'>&`), '&lt;a href=&quot;x&quot; title=&#39;y&#39;&gt;&amp;');
+  assert.equal(escapeHtml(null), '');
+  assert.equal(escapeHtml(undefined), '');
+  assert.equal(escapeHtml(0), '0');
+});
+
+await check('5a slugifyDomId never returns an empty id', () => {
+  assert.equal(slugifyDomId('Average Treatment Effect'), 'average-treatment-effect');
+  assert.equal(slugifyDomId('***'), 'artifact');
+  assert.equal(slugifyDomId(''), 'artifact');
+  assert.equal(slugifyDomId(undefined), 'artifact');
+});
+
+await check('5a clamp holds the bounds', () => {
+  assert.equal(clamp(10, 360, 920), 360);
+  assert.equal(clamp(5000, 360, 920), 920);
+  assert.equal(clamp(500, 360, 920), 500);
+});
+
+// --- conversation: markdown ----------------------------------------------
+
+await check('5a agent markdown escapes before it formats', () => {
+  // An agent reply is LLM-authored text. Formatting it before escaping would
+  // let it close a tag.
+  const html = renderAgentMarkdown('<script>alert(1)</script>');
+  assert.ok(!html.includes('<script>'), 'raw tag must not survive');
+  assert.ok(html.includes('&lt;script&gt;'));
+});
+
+await check('5a agent markdown renders the subset agents emit', () => {
+  assert.equal(renderAgentMarkdown('# Findings'), '<h2>Findings</h2>');
+  assert.equal(renderAgentMarkdown('## Findings'), '<h3>Findings</h3>');
+  assert.equal(renderAgentMarkdown('### Findings'), '<h4>Findings</h4>');
+  assert.equal(renderAgentMarkdown('- one\n- two'), '<ul><li>one</li><li>two</li></ul>');
+  assert.equal(renderAgentMarkdown('**bold**'), '<p><strong>bold</strong></p>');
+  assert.equal(renderAgentMarkdown('`code`'), '<p><code>code</code></p>');
+  assert.equal(renderAgentMarkdown('*em*'), '<p><em>em</em></p>');
+  // A soft break inside a paragraph, not a new paragraph.
+  assert.equal(renderAgentMarkdown('one\ntwo'), '<p>one<br>two</p>');
+  assert.equal(renderAgentMarkdown(''), '');
+  assert.equal(renderAgentMarkdown(null), '');
+});
+
+await check('5a agent markdown renders a results table', () => {
+  // This is the case causal's CDN fallback dropped: a blocked CDN turned an
+  // estimate table into a wall of pipes.
+  const html = renderAgentMarkdown('| Estimate | SE |\n| --- | --- |\n| 0.21 | 0.04 |');
+  assert.match(html, /<table>/);
+  assert.match(html, /<th>Estimate<\/th><th>SE<\/th>/);
+  assert.match(html, /<td>0\.21<\/td><td>0\.04<\/td>/);
+  assert.match(html, /class="conv-table-scroll"/);
+});
+
+await check('5a a table row with the wrong column count is dropped, not misaligned', () => {
+  const html = renderAgentMarkdown('| A | B |\n| --- | --- |\n| 1 | 2 |\n| 3 |');
+  assert.match(html, /<td>1<\/td><td>2<\/td>/);
+  assert.ok(!html.includes('<td>3</td>'), 'a short row would shift every later column');
+});
+
+await check('5a marked is preferred when the page has it, and not required', () => {
+  assert.equal(globalThis.marked, undefined);
+  // Without the CDN script the kit renderer answers, rather than blanking the
+  // agent's reply.
+  assert.equal(renderMarkdownWithMarked('**bold**'), '<p><strong>bold</strong></p>');
+  globalThis.marked = { parse: (text) => `<MARKED>${text}</MARKED>` };
+  try {
+    assert.equal(renderMarkdownWithMarked('**bold**'), '<MARKED>**bold**</MARKED>');
+  } finally {
+    delete globalThis.marked;
+  }
+});
+
+// --- conversation: suggested actions -------------------------------------
+
+await check('5a suggested actions dedupe case-insensitively and keep the first', () => {
+  assert.deepEqual(
+    dedupeActions(['Inspect data quality', 'inspect data quality', 'Critique forecast risks']),
+    ['Inspect data quality', 'Critique forecast risks'],
+  );
+});
+
+await check('5a suggested actions cap the row and drop blanks', () => {
+  const many = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
+  assert.equal(dedupeActions(many, 7).length, 7);
+  assert.deepEqual(dedupeActions(['', '   ', 'real']), ['real']);
+});
+
+await check('5a dedupeByAction keeps the object a portal attached params to', () => {
+  // causal's suggestions arrive as {action, label, params}; deduping must not
+  // reduce them to their action string and lose the params that make the chip
+  // clear a gate.
+  const entries = [
+    { action: 'confirm_dag', params: { dag_id: 'a' } },
+    { action: 'CONFIRM_DAG', params: { dag_id: 'b' } },
+  ];
+  const deduped = dedupeByAction(entries);
+  assert.equal(deduped.length, 1);
+  assert.deepEqual(deduped[0].params, { dag_id: 'a' });
+});
+
+// --- phase track ----------------------------------------------------------
+
+await check('5a paused and blocked are distinct tones, not one stopped colour', () => {
+  // The whole point of the vocabulary. Rendering a gate the same as a failure
+  // tells an operator their run died when it is waiting for them.
+  assert.equal(PHASE_TONE.paused, 'warn');
+  assert.equal(PHASE_TONE.blocked, 'risk');
+  assert.equal(PHASE_TONE.done, 'ok');
+  assert.notEqual(PHASE_TONE.paused, PHASE_TONE.blocked);
+});
+
+await check('5a every phase state maps to a status token', () => {
+  for (const state of ['pending', 'active', 'paused', 'blocked', 'done']) {
+    assert.ok(
+      ['ok', 'warn', 'risk', 'neutral'].includes(PHASE_TONE[state]),
+      `${state} has no tone`,
+    );
+  }
+});
+
+await check('5a phaseForStep groups a stage, and admits when it cannot', () => {
+  // causal's grouping, as the portal writes it down once for both the phase
+  // track and the artifact navigator.
+  const groups = {
+    understand_data: ['data_onboarding', 'eda'],
+    define_question: ['causal_dag', 'dag_confirmed'],
+  };
+  assert.equal(phaseForStep(groups, 'eda'), 'understand_data');
+  assert.equal(phaseForStep(groups, 'dag_confirmed'), 'define_question');
+  // An unmapped stage must not be silently filed under the first phase.
+  assert.equal(phaseForStep(groups, 'sensitivity'), 'other');
+  assert.equal(phaseForStep(groups, undefined), 'other');
+});
+
+// --- surface mode ---------------------------------------------------------
+
+await check('5a surface mode is exactly two words', () => {
+  // Section 5a item 5: a portal offering both surfaces uses predictive's
+  // workbench/conversation rather than inventing a third arrangement.
+  assert.ok(isSurfaceMode('workbench'));
+  assert.ok(isSurfaceMode('conversation'));
+  assert.ok(!isSurfaceMode('chat'));
+  assert.ok(!isSurfaceMode('workspace'));
+  assert.ok(!isSurfaceMode(''));
+  assert.ok(!isSurfaceMode(undefined));
+});
+
+// --- shell chrome ---------------------------------------------------------
+
+await check('5a connection states are three, each with one meaning', () => {
+  assert.deepEqual(Object.keys(CONNECTION_LABELS).sort(), [
+    'connected',
+    'disconnected',
+    'preview',
+  ]);
+  assert.equal(CONNECTION_TONE.connected, 'ok');
+  // Answering, but not from a platform — usable, not evidence.
+  assert.equal(CONNECTION_TONE.preview, 'warn');
+  assert.equal(CONNECTION_TONE.disconnected, 'risk');
+});
+
+await check('5a access label and state agree with each other', () => {
+  assert.equal(accessState({ connected: false }), 'disconnected');
+  assert.equal(accessLabel({ connected: false }), 'Connect a workspace');
+
+  assert.equal(accessState({ connected: true }), 'connected');
+  assert.equal(accessLabel({ connected: true }), 'Connected');
+  assert.equal(accessLabel({ connected: true, workspace: 'acme' }), 'acme');
+  assert.equal(accessLabel({ connected: true, workspace: 'acme', kind: 'demo' }), 'acme · demo');
+
+  // A read-only preview outranks being connected: an operator must be able to
+  // tell at a glance that nothing they do here reaches a platform.
+  assert.equal(accessState({ connected: true, preview: true }), 'preview');
+  assert.equal(accessLabel({ connected: true, preview: true }), 'Read-only preview');
+});
+
+await check('5a brand markup escapes every interpolated value', () => {
+  const html = brandMarkup({
+    name: 'Causal <Agent>',
+    suffix: 'Platform',
+    tag: 'Early & Access',
+    logoSrc: 'logo.png"onerror="alert(1)',
+  });
+  assert.ok(!html.includes('<Agent>'));
+  assert.match(html, /Causal &lt;Agent&gt;/);
+  assert.match(html, /Early &amp; Access/);
+  assert.ok(!html.includes('onerror="alert(1)"'), 'attribute must not break out');
+  assert.match(html, /&quot;onerror=/);
+});
+
 // --- report ---------------------------------------------------------------
 
-console.log('@scurve/portal-kit — section 4 contract\n');
+console.log('@scurve/portal-kit — section 4 and section 5a contract\n');
 console.log(results.join('\n'));
 const failures = results.filter((line) => line.includes('FAIL')).length;
 console.log(

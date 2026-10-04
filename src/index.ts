@@ -84,6 +84,99 @@ export {
   type RefreshLoopOptions,
 } from './poll.js';
 
+// --- UX primitives, section 5a -------------------------------------------
+//
+// Five composable primitives, not a layout. Section 5a records that causal is
+// conversation-first, forecasting workbench-first and predictive dual-mode,
+// that the divergence follows the shape of the task, and that primary
+// interaction model is deliberately not a conformance item. A portal declares
+// which surface is primary and composes these; nothing here imposes an
+// arrangement, and nothing here reaches the network.
+
+export {
+  clamp,
+  cssEscape,
+  element,
+  escapeHtml,
+  highlightElement,
+  resolveClasses,
+  scrollToEnd,
+  slugifyDomId,
+  type ClassMap,
+  type HighlightOptions,
+} from './primitives/dom.js';
+
+export {
+  renderAgentMarkdown,
+  renderMarkdownWithMarked,
+  type MarkdownOptions,
+} from './primitives/markdown.js';
+
+export {
+  createConversation,
+  dedupeActions,
+  dedupeByAction,
+  type ComposerOptions,
+  type Conversation,
+  type ConversationArtifactRef,
+  type ConversationOptions,
+  type ConversationSlot,
+  type MessageKind,
+  type PendingOptions,
+  type SuggestionsOptions,
+} from './primitives/conversation.js';
+
+export {
+  createArtifactView,
+  createResizeHandle,
+  downloadArtifact,
+  type Artifact,
+  type ArtifactGroup,
+  type ArtifactSlot,
+  type ArtifactView,
+  type ArtifactViewOptions,
+  type CollapseMode,
+  type CollapseOptions,
+  type ResizeHandle,
+  type ResizeHandleOptions,
+} from './primitives/artifacts.js';
+
+export {
+  createPhaseTrack,
+  PHASE_TONE,
+  phaseForStep,
+  type PhaseSlot,
+  type PhaseState,
+  type PhaseTrack,
+  type PhaseTrackOptions,
+  type WorkflowState,
+} from './primitives/phaseTrack.js';
+
+export {
+  createSurfaceMode,
+  isSurfaceMode,
+  SURFACE_MODES,
+  type SurfaceMode,
+  type SurfaceModeController,
+  type SurfaceModeOptions,
+  type SurfaceSlot,
+} from './primitives/surfaceMode.js';
+
+export {
+  accessLabel,
+  accessState,
+  brandMarkup,
+  CONNECTION_LABELS,
+  CONNECTION_TONE,
+  createConnectionBadge,
+  type AccessLabelInput,
+  type BrandOptions,
+  type ConnectionBadge,
+  type ConnectionBadgeOptions,
+  type ConnectionSlot,
+  type ConnectionState,
+} from './primitives/shellChrome.js';
+
 import { ApiClient, type ApiClientOptions } from './apiClient.js';
 import { AuthClient, type AuthClientOptions } from './auth.js';
 

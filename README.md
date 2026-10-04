@@ -48,18 +48,19 @@ interaction model is per-portal and is not a conformance item. See
 | --- | --- |
 | `tokens.css` — palette, typography, radii, motion, status colors | shipped in 0.1.0 |
 | API client, token store, auth, errors, polling | shipped in 0.2.0 |
-| UX primitives — shell, conversation, artifacts, phase track, mode | planned |
+| UX primitives — shell, conversation, artifacts, phase track, mode | shipped in 0.3.0 |
+| `primitives.css` — default styling for the primitives | shipped in 0.3.0 |
 | `create-scurve-portal` starter | planned |
 
-Adopters: predictive and forecasting consume the client as of 0.2.0. Causal is
-standards section 9 step 4 and still has its own.
+Adopters: all three portals consume the client as of 0.2.0 — causal's
+restructure was standards section 9 step 4 and is done.
 
 ## Install
 
 ```jsonc
 // <platform>/dev_portal/package.json
 "dependencies": {
-  "@scurve/portal-kit": "github:sophiachen2019/scurve-portal-kit#v0.2.0"
+  "@scurve/portal-kit": "github:sophiachen2019/scurve-portal-kit#v0.3.0"
 }
 ```
 
@@ -172,6 +173,135 @@ tokens so one word means one thing across the system.
 `startRefreshLoop` is the separate case of a background refresh that never
 settles: no timeout, an explicit `stop`, and a `pause` predicate so an
 operator's open dialog or focused field is left alone.
+
+## UX primitives
+
+Five composable primitives, from standards section 5a: shell chrome,
+conversation, artifacts, phase track, and mode. They were extracted from the
+three portals rather than designed ahead of them — all three already had a
+conversation surface and an artifact surface, so each API below is the
+intersection of three working implementations.
+
+**What is not here is a layout.** Section 5a is explicit that the primary
+interaction model follows the shape of the task and is *not* a conformance
+item: causal is conversation-first because causal analysis is a gated 14-stage
+workflow, forecasting is workbench-first because it is iterative comparison,
+predictive is dual-mode because artifact review wants both. A portal declares
+which surface is primary and composes the primitives behind it. Nothing in the
+kit prefers an arrangement, and no primitive touches the network.
+
+```ts
+import {
+  createConversation,
+  createArtifactView,
+  createPhaseTrack,
+  createSurfaceMode,
+  createConnectionBadge,
+} from '@scurve/portal-kit';
+```
+
+### Presentation is a parameter
+
+Every primitive takes a `classNames` map from a semantic slot — `message`,
+`typeBadge`, `pendingText` — to the class a portal's stylesheet already
+targets. That is what let three shipped portals adopt one implementation
+without any of them changing how they look.
+
+```ts
+// causal keeps its own class vocabulary; the behaviour comes from the kit.
+const conversation = createConversation({
+  messages: document.getElementById('chatMessages'),
+  classNames: { message: 'msg', pending: 'typing-indicator-container' },
+  renderMarkdown: renderMarkdownWithMarked,
+});
+```
+
+The kit defaults are the vocabulary `primitives.css` styles and the vocabulary
+`create-scurve-portal` emits. A new portal passes no `classNames` at all.
+
+### The option surface is an inventory, not a design
+
+`ArtifactViewOptions` in particular is wider than a from-scratch component
+would be. Each presentation option — `badgePlacement`, `controlsWrapper`,
+`downloadLabel`, `badgeTypeClass`, `collapse.mode`, `cardId` — exists because
+two shipped portals disagree on that one point and neither disagreement has a
+reason behind it. Writing them down here makes the drift countable; three
+private copies did not.
+
+Reconciling them is a visible change and needs its own review, exactly as
+adopting the kit palette in the cockpit did in step 1 of the adoption path.
+The target state is that every one of those options is deleted and the kit
+default is the only arrangement.
+
+### Gate semantics
+
+`PhaseState` is `pending | active | paused | blocked | done`, and `paused` and
+`blocked` are deliberately distinct:
+
+| State | Tone | Means |
+| --- | --- | --- |
+| `paused` | `--warn` | The platform is waiting for the operator. A gate. |
+| `blocked` | `--risk` | The run cannot continue. |
+
+Collapsing both onto one "stopped" colour tells an operator their run has
+failed when it is waiting for them. `createPhaseTrack` reports either through
+`onGate` together with the platform's `next_actions`, because section 5
+requires a blocked state to render what would unblock it — the defect that had
+`next_actions` appearing zero times in the cockpit while the API returned it on
+every blocked result.
+
+### Connection states
+
+Three states, each meaning one thing, so `Connected` in one portal and
+`FastAPI` in another stop describing the same condition:
+
+| State | Tone | Dot |
+| --- | --- | --- |
+| `connected` | `--ok` | lit |
+| `preview` | `--warn` | lit — something is answering, but not a platform |
+| `disconnected` | `--risk` | dark |
+
+`set(state, label?)` lets a portal say something more specific than the state
+name while the condition stays one of the three.
+
+### Markdown
+
+`renderAgentMarkdown` renders the subset agents actually emit — headings,
+bullets, pipe tables, bold, italic, inline code, soft breaks — and escapes
+before it formats, because an agent reply is LLM-authored text. It is
+forecasting's renderer, which was the most complete of the three and needs no
+CDN.
+
+`renderMarkdownWithMarked` prefers a `marked` CDN script when the page has one
+and falls back to the above. causal loads `marked`, and its own fallback
+covered bold, code and line breaks only — so a blocked CDN turned an estimate
+table into a wall of pipes. The loaded path is unchanged; the degraded path is
+now legible.
+
+Predictive renders agent text escaped and unformatted, so the same reply reads
+as prose in two portals and as source in the third. That is a visible change to
+fix and is listed in the standards doc rather than done quietly here.
+
+### Verification
+
+`npm run verify` asserts the DOM-free half of this section — the markdown
+subset, the chip dedupe, the phase and connection vocabularies, the access
+label, escaping — alongside the section 4 contract.
+
+The DOM-building half is deliberately not asserted there. A hand-rolled or
+library DOM stub agrees with whatever it was written to agree with, and the
+claim that matters is that three shipped portals render exactly as they did.
+That is checked in a real browser against each portal's real stylesheet with
+`scripts/dom-snapshot.js`, which emits a normalized line-per-node signature
+including the computed properties that decide layout:
+
+```js
+const before = scurveDomSnapshot(document.body);
+// ... swap in the primitives, reload, drive the same page state ...
+scurveDomDiff(before, scurveDomSnapshot(document.body));   // [] when neutral
+```
+
+Run both. Neither half alone is enough.
 
 ## Tokens
 

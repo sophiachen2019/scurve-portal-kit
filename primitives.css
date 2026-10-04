@@ -1,0 +1,537 @@
+/*
+ * Default styling for the UX primitives, keyed to the kit's default class
+ * names. `portal_ui_standards.md` section 5a.
+ *
+ * This file is for a portal that has no stylesheet of its own yet — which
+ * means anything `create-scurve-portal` produces. It is deliberately *not*
+ * imported by causal, forecasting or predictive: all three already style their
+ * conversation and artifact surfaces, and they pass their own class names to
+ * the primitives so the markup lands on the CSS they already have. Giving them
+ * this file instead would be a visible restyle of three shipped products.
+ *
+ *   @import "@scurve/portal-kit/tokens.css";
+ *   @import "@scurve/portal-kit/primitives.css";
+ *
+ * Status colours carry the fixed meanings in section 5: --ok is completed and
+ * usable as evidence, --warn is completed but needs review, --risk produced no
+ * usable result.
+ *
+ * ## Why the local variables below
+ *
+ * tokens.css does not define the same surface variables on both surfaces: of
+ * the twenty set under [data-surface], only --bg, --surface, --ink, --muted,
+ * --line, --glass-bg, --glass-border and --shadow appear under both dark and
+ * light. --surface-2 and --surface-3 are light-only; --surface-raised,
+ * --surface-muted and --soft-muted are dark-only. A stylesheet that reaches
+ * for a one-sided name renders unstyled on the other surface.
+ *
+ * So this file resolves everything through the eight shared names, with the
+ * one-sided ones as preferences ahead of them. That keeps the primitives
+ * surface-agnostic today; when the two blocks are evened up, these fall back
+ * to the tokens with no change here.
+ */
+
+:root {
+  --sc-raised: var(--surface-raised, var(--surface-2, rgb(127 127 127 / 0.08)));
+  --sc-sunken: var(--surface-muted, var(--surface-3, rgb(127 127 127 / 0.14)));
+  --sc-dim: var(--soft-muted, var(--muted));
+  --sc-accent-fill: var(--accent-subtle);
+  --sc-accent-line: var(--accent-glow);
+}
+
+/* --- conversation ------------------------------------------------------- */
+
+.conversation-message {
+  max-width: 72ch;
+  margin: 0.5rem 0;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+/* Preserved, because an operator's own newlines are part of what they wrote. */
+.conversation-message.user {
+  margin-left: auto;
+  border: 1px solid var(--sc-accent-line);
+  background: var(--sc-accent-fill);
+  white-space: pre-wrap;
+}
+
+.conversation-message.agent {
+  border: 1px solid var(--line);
+  background: var(--sc-raised);
+}
+
+/* The portal talking, not the agent: quieter, and never mistaken for a reply. */
+.conversation-message.system {
+  max-width: none;
+  margin-inline: auto;
+  padding: 0.3rem 0.6rem;
+  border: 0;
+  background: none;
+  color: var(--sc-dim);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.conversation-message.system.error { color: var(--risk); }
+
+.conversation-message > :first-child { margin-top: 0; }
+.conversation-message > :last-child { margin-bottom: 0; }
+
+.conversation-message code {
+  padding: 0.05rem 0.25rem;
+  border-radius: var(--radius-sm);
+  background: var(--sc-sunken);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+.conversation-message table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.conversation-message th,
+.conversation-message td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.conv-table-scroll { overflow-x: auto; }
+
+/* --- in-message artifact chips ------------------------------------------ */
+
+.conversation-artifact-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.conversation-artifact-chip {
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--sc-accent-line);
+  border-radius: 999px;
+  background: var(--sc-accent-fill);
+  color: var(--accent);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.conversation-artifact-chip:hover { border-color: var(--accent); }
+
+/* --- streaming state ---------------------------------------------------- */
+
+/*
+ * Section 4.5: queued and running must read differently from succeeded. This
+ * is the running state, and it is animated on purpose — a static line reading
+ * "working" is indistinguishable from a hang.
+ */
+.conversation-pending {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+}
+
+.conversation-pending-dots {
+  display: inline-flex;
+  gap: 0.2rem;
+}
+
+.conversation-pending-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: scurve-pending 1.2s ease-in-out infinite;
+}
+
+.conversation-pending-dots span:nth-child(2) { animation-delay: 0.15s; }
+.conversation-pending-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+.conversation-pending-text {
+  color: var(--sc-dim);
+  font-size: 0.78rem;
+}
+
+@keyframes scurve-pending {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-pending-dots span { animation: none; opacity: 0.7; }
+}
+
+/* --- suggested actions -------------------------------------------------- */
+
+/*
+ * How an operator clears a gate without having to know the action vocabulary.
+ * Section 5 requires a blocked state to render what would unblock it; these
+ * are where that lands.
+ */
+.conversation-suggestion {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--sc-raised);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.conversation-suggestion:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.conversation-suggestion:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- artifacts ---------------------------------------------------------- */
+
+.artifact-card {
+  margin: 0.5rem 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--sc-raised);
+  overflow: hidden;
+}
+
+.artifact-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.artifact-card-title {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.artifact-type-badge {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--sc-accent-line);
+  border-radius: var(--radius-sm);
+  background: var(--sc-accent-fill);
+  color: var(--accent);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.artifact-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.artifact-download-btn,
+.artifact-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.artifact-download-btn:hover,
+.artifact-expand-btn:hover {
+  border-color: var(--line);
+  color: var(--accent);
+}
+
+.artifact-collapse-arrow {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.artifact-card-body {
+  padding: 0.65rem;
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+
+.artifact-card-body.collapsed { display: none; }
+
+.artifact-group + .artifact-group { margin-top: 0.75rem; }
+
+.artifact-group-header {
+  padding: 0.3rem 0;
+  color: var(--sc-dim);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.artifact-empty {
+  padding: 1.5rem 0.75rem;
+  color: var(--sc-dim);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* --- expand to modal ---------------------------------------------------- */
+
+.artifact-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgb(0 0 0 / 0.6);
+}
+
+.artifact-modal-overlay.closing {
+  opacity: 0;
+  transition: opacity 0.3s var(--ease-out);
+}
+
+.artifact-modal-content {
+  display: flex;
+  width: min(1100px, 100%);
+  max-height: 90vh;
+  flex-direction: column;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.artifact-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.artifact-modal-header .artifact-card-title { cursor: default; }
+
+.artifact-modal-close {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.artifact-modal-close:hover { color: var(--ink); }
+
+.artifact-modal-body {
+  padding: 1rem;
+  overflow: auto;
+}
+
+/* --- resize handle ------------------------------------------------------ */
+
+.artifact-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.artifact-resize-handle:hover { background: var(--sc-accent-line); }
+
+body.resizing-artifacts {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* --- phase track -------------------------------------------------------- */
+
+/*
+ * Gate semantics, from section 5a item 4. `paused` and `blocked` are both
+ * stops and they mean opposite things to an operator: paused is the platform
+ * waiting for them, blocked is the run unable to continue. They must never
+ * render the same, which is why each gets its own status token rather than
+ * sharing one "stopped" colour.
+ */
+.phase-step,
+.progress-step {
+  --phase-tone: var(--line);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  color: var(--sc-dim);
+  font-size: 0.78rem;
+}
+
+.phase-step::before,
+.progress-step::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border: 1px solid var(--phase-tone);
+  border-radius: 50%;
+  background: transparent;
+}
+
+.phase-step.done,
+.progress-step.done {
+  --phase-tone: var(--ok);
+  color: var(--ink);
+}
+
+.phase-step.done::before,
+.progress-step.done::before { background: var(--phase-tone); }
+
+.phase-step.active,
+.progress-step.active {
+  --phase-tone: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.phase-step.active::before,
+.progress-step.active::before {
+  background: var(--phase-tone);
+  box-shadow: 0 0 0 3px var(--sc-accent-fill);
+}
+
+/* Waiting on the operator. Completed work, held at a gate. */
+.phase-step.paused,
+.progress-step.paused { --phase-tone: var(--warn); }
+
+/* Unable to continue. Section 5: whatever renders this must also render what
+   would clear it. */
+.phase-step.blocked,
+.progress-step.blocked { --phase-tone: var(--risk); }
+
+/* --- surface mode toggle ------------------------------------------------ */
+
+.surface-mode-toggle {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--sc-raised);
+}
+
+.surface-mode-toggle [data-mode] {
+  padding: 0.25rem 0.7rem;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.surface-mode-toggle [data-mode][aria-pressed="true"] {
+  background: var(--sc-accent-fill);
+  color: var(--accent);
+}
+
+/* --- shell chrome ------------------------------------------------------- */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-family: inherit;
+}
+
+.brand-logo-img {
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+
+.brand-titles {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.brand-text {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.brand-accent { color: var(--accent); }
+
+.brand-tag {
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--sc-accent-line);
+  border-radius: var(--radius-sm);
+  background: var(--sc-accent-fill);
+  color: var(--accent);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.brand-byline {
+  color: var(--sc-dim);
+  font-size: 0.68rem;
+}
+
+.connection-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--sc-raised);
+  color: var(--ink);
+  font-size: 0.74rem;
+}
+
+/* Hollow and red-edged until something is answering, so "not connected" is
+   never ambiguous. */
+.connection-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border: 1px solid var(--risk);
+  border-radius: 50%;
+  background: transparent;
+}
+
+.connection-dot.live {
+  border-color: var(--ok);
+  background: var(--ok);
+}
