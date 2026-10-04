@@ -1,0 +1,19 @@
+{
+  "name": "__PLATFORM__-agent-portal",
+  "version": "0.1.0",
+  "description": "Operator portal for the __PLATFORM_TITLE__ Agent Platform",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port __PORT__",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port __PORT__"
+  },
+  "dependencies": {
+    "@scurve/portal-kit": "github:sophiachen2019/scurve-portal-kit#v__KIT_VERSION__"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^8.0.12"
+  }
+}

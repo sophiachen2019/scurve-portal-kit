@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<!--
+  data-surface is how tokens.css picks a palette. The operator portals render
+  dark; the autonomous-data-team cockpit renders light. Standards section 5.
+-->
+<html lang="en" data-surface="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>__PLATFORM_TITLE__ Agent Platform | S-Curve Data</title>
+  <meta name="description"
+    content="Operator portal for the S-Curve Data __PLATFORM_TITLE__ Agent Platform." />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="stylesheet" href="./src/styles.css" />
+</head>
+
+<body>
+  <div class="portal">
+    <header class="portal-header">
+      <!-- Shell chrome, section 5a item 1: brand block and connection badge
+           render identically and sit in the same place in every portal. Both
+           are filled in by the kit from app.ts. -->
+      <div id="brand"></div>
+
+      <div class="portal-header-right">
+/* IF:dual */
+        <!-- Section 5a item 5: where a portal offers both surfaces it uses
+             predictive's explicit workbench/conversation mode rather than
+             inventing a third arrangement. -->
+        <div class="surface-mode-toggle" id="surfaceMode" role="group" aria-label="Workspace mode">
+          <button type="button" data-mode="workbench">Workbench</button>
+          <button type="button" data-mode="conversation">Conversation</button>
+        </div>
+/* ENDIF:dual */
+        <div class="connection-badge" id="connectionBadge">
+          <span class="connection-dot" id="connectionDot"></span>
+          <span id="connectionLabel">Disconnected</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="portal-main">
+/* IF:workbench */
+      <!-- The workbench surface. Direct manipulation: your own panels, forms
+           and charts go here. Charts, DAG editors and model cards stay local
+           by the section 5a membership test — they are the product. -->
+      <section class="workbench" id="workbenchPanel" aria-label="Workbench">
+        <div class="phase-track" id="phaseTrack" aria-label="Workflow phases">
+          <!-- Section 5a item 4. Remove this block if the platform exposes no
+               gated workflow; keep it and the kit renders paused and blocked
+               distinctly, which is the point of it. -->
+          <div class="phase-step" data-phase="prepare"><span class="phase-title">Prepare</span></div>
+          <div class="phase-step" data-phase="run"><span class="phase-title">Run</span></div>
+          <div class="phase-step" data-phase="review"><span class="phase-title">Review</span></div>
+        </div>
+        <div class="workbench-body" id="workbenchBody"></div>
+      </section>
+/* ENDIF:workbench */
+      <!-- The conversation surface, section 5a item 2. The kit owns the
+           message list, composer, chips and streaming state; this markup is
+           only where they live. -->
+      <section class="conversation" id="conversationPanel" aria-label="Agent conversation">
+        <div class="conversation-messages" id="conversationMessages" aria-live="polite">
+          <div class="conversation-welcome" id="conversationWelcome">
+            <h2>__PLATFORM_TITLE__ Agent</h2>
+            <p>Describe what you want to find out. The agent will inspect your data and work through it with you.</p>
+          </div>
+        </div>
+        <div class="conversation-suggestions" id="conversationSuggestions" hidden></div>
+        <form class="conversation-composer" id="conversationComposer">
+          <label class="sr-only" for="conversationInput">Message the agent</label>
+          <input type="text" id="conversationInput" autocomplete="off"
+            placeholder="Ask the agent to inspect, run, or explain…" disabled />
+          <button type="submit" id="conversationSend" disabled>Send</button>
+        </form>
+      </section>
+
+      <!-- The artifact surface, section 5a item 3. Every portal has one. -->
+      <aside class="artifact-panel" id="artifactPanel" aria-label="Artifacts">
+        <div class="artifact-resize-handle" id="artifactResizeHandle" role="separator"
+          aria-orientation="vertical" aria-label="Resize artifacts panel"></div>
+        <div class="artifact-panel-header">
+          <h3>Artifacts</h3>
+          <span class="artifact-count" id="artifactCount">0</span>
+        </div>
+        <div class="artifact-list" id="artifactList">
+          <div class="artifact-empty">Artifacts will appear here as the agent produces them.</div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script type="module" src="/src/app.ts"></script>
+</body>
+
+</html>

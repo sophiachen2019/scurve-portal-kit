@@ -50,7 +50,7 @@ interaction model is per-portal and is not a conformance item. See
 | API client, token store, auth, errors, polling | shipped in 0.2.0 |
 | UX primitives — shell, conversation, artifacts, phase track, mode | shipped in 0.3.0 |
 | `primitives.css` — default styling for the primitives | shipped in 0.3.0 |
-| `create-scurve-portal` starter | planned |
+| `create-scurve-portal` starter | shipped in 0.3.0 |
 
 Adopters: all three portals consume the client as of 0.2.0 — causal's
 restructure was standards section 9 step 4 and is done.
@@ -302,6 +302,39 @@ scurveDomDiff(before, scurveDomSnapshot(document.body));   // [] when neutral
 ```
 
 Run both. Neither half alone is enough.
+
+## create-scurve-portal
+
+Standards section 9 step 6. Portal four inherits the standard by construction
+rather than by compliance.
+
+```sh
+node create-scurve-portal/index.mjs --name experimentation --surface dual-mode
+```
+
+It asks exactly one question — **which surface is primary** — because that is
+the one thing section 5a says is genuinely per-portal:
+
+| `--surface` | For a task shaped like | Composes |
+| --- | --- | --- |
+| `conversation` | a gated or sequential workflow, where the gating is the product | conversation + artifacts |
+| `workbench` | iterative comparison and direct manipulation | workbench + phase track + conversation + artifacts |
+| `dual-mode` | artifact review, where an operator needs both | both, behind predictive's explicit toggle |
+
+Every portal gets a conversation surface and an artifact surface, because that
+is the observation that made these primitives extractable in the first place:
+all three existing portals already have both. The surface choice decides which
+one *leads*, not which ones exist.
+
+Nothing else is asked, because nothing else is a decision: the `src/` layout of
+section 3, the kit API client of section 4, kit tokens and primitives, strict
+TypeScript, and Vite with the standard `dev`/`build`/`preview` scripts all come
+as given. The generated portal has no palette of its own and no `fetch` outside
+`apiClient.ts` and its one `*Service.ts`.
+
+All three variants are built as part of verifying a release. The generated
+portal connects out of the box against `scripts/mock-platform.mjs`, so there is
+something to talk to before the platform exists.
 
 ## Tokens
 

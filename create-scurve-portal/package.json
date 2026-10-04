@@ -1,0 +1,9 @@
+{
+  "name": "create-scurve-portal",
+  "version": "0.3.0",
+  "description": "Scaffolds a conforming S-Curve Data agent platform portal.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "bin": { "create-scurve-portal": "./index.mjs" },
+  "files": ["index.mjs", "template"]
+}

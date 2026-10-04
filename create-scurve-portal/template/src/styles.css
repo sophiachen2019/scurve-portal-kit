@@ -1,0 +1,255 @@
+/*
+ * __PLATFORM_TITLE__ portal styles.
+ *
+ * `portal_ui_standards.md` section 5: import the kit tokens first, then add
+ * only portal-specific rules. There is no palette here and there should never
+ * be one — the S-Curve palette, surfaces, typography scale, radii and status
+ * colours all come from tokens.css, and copying a value out of it is how the
+ * drift this standard exists to stop began.
+ *
+ * primitives.css styles the kit's default class vocabulary, which is what the
+ * primitives emit when a portal passes no `classNames`. This portal passes
+ * none, so the conversation, artifacts, phase track, mode toggle and shell
+ * chrome are all styled by the kit.
+ */
+
+@import "@scurve/portal-kit/tokens.css";
+@import "@scurve/portal-kit/primitives.css";
+
+/* --- layout -------------------------------------------------------------- */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.portal {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.portal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--glass-bg);
+}
+
+.portal-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.portal-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+/* --- surfaces ------------------------------------------------------------ */
+
+.workbench,
+.conversation {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 0.75rem;
+}
+
+/* `hidden` has to beat the flex display above, or a hidden surface still
+   occupies its column. */
+.workbench[hidden],
+.conversation[hidden] {
+  display: none;
+}
+
+.phase-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.workbench-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.conversation-messages {
+  flex: 1;
+  min-height: 0;
+  padding-right: 0.25rem;
+  overflow-y: auto;
+}
+
+.conversation-welcome {
+  padding: 2rem 1rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.conversation-welcome h2 {
+  margin: 0 0 0.4rem;
+  color: var(--ink);
+  font-size: 1.1rem;
+}
+
+.conversation-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* The primitive sets `hidden` when there is nothing to suggest. */
+.conversation-suggestions[hidden] {
+  display: none;
+}
+
+.conversation-composer {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.conversation-composer input {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--input-ink);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.conversation-composer input:disabled {
+  opacity: 0.6;
+}
+
+.conversation-composer button {
+  padding: 0.55rem 1.1rem;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--brand-mist);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.conversation-composer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- artifact panel ------------------------------------------------------ */
+
+/* `position: relative` is what the kit's absolutely positioned resize handle
+   anchors to. */
+.artifact-panel {
+  position: relative;
+  display: flex;
+  width: 380px;
+  flex: none;
+  flex-direction: column;
+  border-left: 1px solid var(--line);
+  background: var(--glass-bg);
+}
+
+.artifact-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.artifact-panel-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.artifact-count {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.artifact-list {
+  flex: 1;
+  min-height: 0;
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
+/* --- shared -------------------------------------------------------------- */
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.table-wrap th,
+.table-wrap td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Visually hidden, still announced. A composer with no label is unusable with
+   a screen reader. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .portal-main {
+    flex-direction: column;
+  }
+
+  .artifact-panel {
+    width: auto;
+    max-height: 45vh;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .artifact-resize-handle {
+    display: none;
+  }
+}
