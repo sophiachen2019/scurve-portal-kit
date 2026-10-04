@@ -1,0 +1,119 @@
+/* S-Curve Data — shared portal design tokens.
+ *
+ * Single source for the palette, typography, radii, and motion used by the
+ * agent platform portals. Before this file the palette was copy-pasted across
+ * repos and drifted; predictive's forecasting-alignment.css still opens with
+ * "Shared visual tokens from forecasting-agent-platform", which is the hand
+ * copy this file replaces.
+ *
+ * Usage — import first, then add portal-specific rules:
+ *
+ *     @import "@scurve/portal-kit/tokens.css";
+ *
+ * Surfaces are opt-in. Set data-surface on <html>:
+ *
+ *     <html data-surface="dark">    operator portals
+ *     <html data-surface="light">   light surfaces
+ *
+ * Status tokens carry fixed meaning, matching the agent status vocabulary in
+ * autonomous-data-team/docs/architecture/specialist_agent_standards.md §3:
+ *
+ *     --ok     completed and usable as evidence
+ *     --warn   completed but needs human review before use
+ *     --risk   blocked or errored; produced no usable result
+ *
+ * A blocked state must always render what would unblock it, never a bare red
+ * indicator. See portal_ui_standards.md §5.
+ */
+
+:root {
+  /* Brand */
+  --brand-teal: #0f766e;
+  --brand-indigo: #a5b4fc;
+  --brand-black: #091a1d;
+  --brand-slate: #12343a;
+  --brand-mist: #f8fafc;
+
+  /* Accent */
+  --accent: var(--brand-teal);
+  --accent-hover: #115e59;
+  --accent-glow: rgba(20, 184, 166, 0.22);
+  --accent-subtle: rgba(20, 184, 166, 0.1);
+  --accent-2: var(--brand-indigo);
+  --accent-3: #60a5fa;
+
+  /* Status — fixed meaning, see header */
+  --ok: #10b981;
+  --warn: #f59e0b;
+  --risk: #f87171;
+  --info: #60a5fa;
+
+  /* Legacy aliases, kept so existing rules keep resolving. Prefer the names
+     above; these are scheduled for removal once portals are migrated. */
+  --success: var(--ok);
+  --warning: var(--warn);
+  --danger: var(--risk);
+
+  /* Chart */
+  --chart-actual: #f8fafc;
+  --chart-fit: #a5b4fc;
+  --chart-forecast: #14b8a6;
+  --chart-bearish: #f59e0b;
+  --chart-bullish: #10b981;
+
+  /* Typography */
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font);
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Layout */
+  --assistant-width: 360px;
+
+  /* Inputs — fixed across surfaces so form fields stay legible on dark */
+  --input-bg: #ffffff;
+  --input-ink: #091a1d;
+}
+
+/* Dark operational surfaces. Current default for all three agent portals. */
+[data-surface="dark"] {
+  --bg: #061c1f;
+  --bg-elevated: #061c1f;
+  --shell: #061c1f;
+  --shell-2: #0b262b;
+  --surface: rgba(11, 38, 43, 0.92);
+  --surface-strong: rgba(8, 31, 35, 0.98);
+  --surface-muted: rgba(248, 250, 252, 0.06);
+  --surface-raised: rgba(248, 250, 252, 0.09);
+  --ink: #f8fafc;
+  --muted: #b7c8cc;
+  --soft-muted: #789099;
+  --line: rgba(248, 250, 252, 0.11);
+  --glass-bg: rgba(11, 38, 43, 0.88);
+  --glass-border: rgba(248, 250, 252, 0.1);
+  --glass-glow: 0 14px 34px rgba(0, 0, 0, 0.22);
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+}
+
+[data-surface="light"] {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-3: #e2e8f0;
+  --ink: #0f172a;
+  --ink-secondary: #334155;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(15, 23, 42, 0.1);
+  --shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+}

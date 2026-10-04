@@ -1,0 +1,20 @@
+{
+  "name": "@scurve/portal-kit",
+  "version": "0.1.0",
+  "description": "Shared design tokens, API client, and UX primitives for S-Curve Data agent platform portals.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sophiachen2019/scurve-portal-kit.git"
+  },
+  "exports": {
+    "./tokens.css": "./tokens.css"
+  },
+  "files": [
+    "tokens.css"
+  ],
+  "sideEffects": [
+    "*.css"
+  ]
+}
