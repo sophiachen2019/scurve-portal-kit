@@ -1,6 +1,6 @@
 {
   "name": "@scurve/portal-kit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Shared design tokens, API client, and UX primitives for S-Curve Data agent platform portals.",
   "type": "module",
   "license": "UNLICENSED",

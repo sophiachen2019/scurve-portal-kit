@@ -50,7 +50,7 @@ interaction model is per-portal and is not a conformance item. See
 | API client, token store, auth, errors, polling | shipped in 0.2.0 |
 | UX primitives — shell, conversation, artifacts, phase track, mode | shipped in 0.3.0 |
 | `primitives.css` — default styling for the primitives | shipped in 0.3.0 |
-| `create-scurve-portal` starter | shipped in 0.3.0 |
+| `create-scurve-portal` starter | shipped in 0.4.0 |
 
 Adopters: all three portals consume the client as of 0.2.0 — causal's
 restructure was standards section 9 step 4 and is done.
@@ -60,7 +60,7 @@ restructure was standards section 9 step 4 and is done.
 ```jsonc
 // <platform>/dev_portal/package.json
 "dependencies": {
-  "@scurve/portal-kit": "github:sophiachen2019/scurve-portal-kit#v0.3.0"
+  "@scurve/portal-kit": "github:sophiachen2019/scurve-portal-kit#v0.4.0"
 }
 ```
 
