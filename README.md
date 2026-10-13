@@ -60,7 +60,7 @@ restructure was standards section 9 step 4 and is done.
 ```jsonc
 // <platform>/dev_portal/package.json
 "dependencies": {
-  "@scurve/portal-kit": "github:sophiachen2019/scurve-portal-kit#v0.4.0"
+  "@scurve/portal-kit": "github:sophiachen2019/scurve-portal-kit#v0.4.1"
 }
 ```
 
@@ -218,6 +218,17 @@ const conversation = createConversation({
 
 The kit defaults are the vocabulary `primitives.css` styles and the vocabulary
 `create-scurve-portal` emits. A new portal passes no `classNames` at all.
+
+### A composer inside a `<form>`
+
+If the composer's field or Send button sits inside a `<form>`,
+`createConversation` takes over that form's `submit` event: it always calls
+`preventDefault()` and routes the submission through the same path as Send and
+Enter (`canSubmit`, then `onSubmit`). A `type="submit"` Send therefore sends
+once and never navigates. Before 0.4.1 it did both — the form's default GET
+reloaded the page and lost the conversation — so a portal on an earlier tag
+must make Send `type="button"` or prevent the form's submit itself. The
+starter template does the former regardless.
 
 ### The option surface is an inventory, not a design
 

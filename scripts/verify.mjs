@@ -7,6 +7,7 @@
  */
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 // --- stubs ----------------------------------------------------------------
 
@@ -890,6 +891,28 @@ await check('5a brand markup escapes every interpolated value', () => {
   assert.match(html, /Early &amp; Access/);
   assert.ok(!html.includes('onerror="alert(1)"'), 'attribute must not break out');
   assert.match(html, /&quot;onerror=/);
+});
+
+// --- starter template markup ----------------------------------------------
+//
+// Static, so it stays on the DOM-free side of the split above. What it guards
+// is a page reload: a `type="submit"` Send inside the composer form ran the
+// form's default GET as well as sending, and the conversation was lost. The
+// kit now prevents that form's submit itself (see `ComposerOptions.input`);
+// that half is DOM behaviour and is checked in a browser — with the composer
+// wrapped in a `<form>` and Send as `type="submit"`, a click and an Enter each
+// send exactly once and `location.href` does not change.
+
+await check('5a starter composer Send cannot submit its form', () => {
+  const html = readFileSync(new URL('../create-scurve-portal/template/index.html', import.meta.url), 'utf8');
+  const form = html.match(/<form\b[^>]*\bid="conversationComposer"[^>]*>([\s\S]*?)<\/form>/);
+  assert.ok(form, 'template must still render the composer as a form');
+  const buttons = form[1].match(/<button\b[^>]*>/g) ?? [];
+  assert.ok(buttons.length > 0, 'composer must contain a Send button');
+  for (const button of buttons) {
+    // An untyped <button> inside a form is a submit button too.
+    assert.match(button, /\btype="button"/, `${button} would submit the form`);
+  }
 });
 
 // --- report ---------------------------------------------------------------

@@ -70,6 +70,13 @@ export interface ConversationArtifactRef {
 }
 
 export interface ComposerOptions {
+  /**
+   * The field. If it, or `send`, sits inside a `<form>`, that form's `submit`
+   * event is taken over: its default is always prevented and it routes to the
+   * same path as Send and Enter. Without that, a `type="submit"` Send button
+   * both sent the message and ran the form's default GET, reloading the page
+   * and losing the conversation.
+   */
   input: HTMLInputElement | HTMLTextAreaElement | null;
   send?: HTMLElement | null;
   /** Called with the trimmed text, after the field has been cleared. */
@@ -214,6 +221,8 @@ export function createConversation<Item = unknown>(
   // `showPending`, so a selector would have to escape a portal-supplied class
   // name on every rotation tick to find what we just built.
   let pendingText: HTMLElement | null = null;
+  // `attach` re-runs `bindComposer`, often with the same form still in place.
+  const boundForms = new WeakSet<HTMLFormElement>();
 
   function classFor(kind: MessageKind, error: boolean): string {
     const parts = [classes.message, classes[kind]];
@@ -382,7 +391,24 @@ export function createConversation<Item = unknown>(
   function bindComposer(): void {
     const composer = options.composer;
     if (!composer) return;
-    if (composerSend) {
+    const form = (composerSend ?? composerInput)?.closest('form') ?? null;
+    if (form && !boundForms.has(form)) {
+      boundForms.add(form);
+      // Unconditionally prevented, including when `submit` refuses: a
+      // navigation would throw away the conversation either way.
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        submit();
+      });
+    }
+    // A submit button of that form already arrives through `submit` above;
+    // binding its click too would route one press twice.
+    const sendSubmitsForm =
+      form !== null &&
+      composerSend instanceof HTMLButtonElement &&
+      composerSend.type === 'submit' &&
+      composerSend.form === form;
+    if (composerSend && !sendSubmitsForm) {
       composerSend.addEventListener('click', () => void submit());
     }
     if (composerInput && composer.submitOnEnter !== false) {

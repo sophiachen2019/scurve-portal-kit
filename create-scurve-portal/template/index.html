@@ -72,7 +72,9 @@
           <label class="sr-only" for="conversationInput">Message the agent</label>
           <input type="text" id="conversationInput" autocomplete="off"
             placeholder="Ask the agent to inspect, run, or explain…" disabled />
-          <button type="submit" id="conversationSend" disabled>Send</button>
+          <!-- type="button": the kit also prevents this form's submit, but a
+               Send that cannot navigate does not depend on that. -->
+          <button type="button" id="conversationSend" disabled>Send</button>
         </form>
       </section>
 
