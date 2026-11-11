@@ -915,6 +915,69 @@ await check('5a starter composer Send cannot submit its form', () => {
   }
 });
 
+// --- instrumentation -----------------------------------------------------
+//
+// portal_instrumentation_standard.md (autonomous-data-team): one lifecycle, the same names in every portal.
+
+function telemetryWith(app) {
+  const sent = [];
+  const store = new Map();
+  const telemetry = kit.createPortalTelemetry({
+    endpoint: 'https://collector.example/', app, release: 'abc1234', setTimer: () => 0,
+    storage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) },
+    fetchImpl: async (url, init) => {
+      const body = JSON.parse(init.body);
+      sent.push({ url, events: body.events });
+      return jsonResponse(200, { results: body.events.map((e) => ({ event_id: e.event_id, status: 'accepted' })) });
+    },
+  });
+  return { telemetry, sent, store };
+}
+
+await check('instrumentation is off without a collector address', () => {
+  const off = kit.createPortalTelemetry({ app: 'causal' });
+  assert.equal(off.enabled, false);
+  assert.deepEqual(off.runRequested('bsts'), {});
+});
+
+await check('instrumentation sends the lifecycle once each, on one journey', async () => {
+  const { telemetry, sent } = telemetryWith('causal');
+  telemetry.portalOpened(); telemetry.portalOpened();
+  telemetry.signedIn('frictionless');
+  telemetry.stepViewed('define_question'); telemetry.stepViewed('define_question');
+  const headers = telemetry.runRequested('bsts');
+  telemetry.resultViewed('run-1'); telemetry.resultViewed('run-1');
+  telemetry.errorShown(kit.errorKindFor('timeout'), 'estimate_effect');
+  await telemetry.flush();
+  const events = sent.flatMap((call) => call.events);
+  assert.equal(sent[0].url, 'https://collector.example/v1/events/browser');
+  assert.deepEqual(events.map((e) => e.event_name),
+    ['portal_opened', 'signed_in', 'workflow_step_viewed', 'run_requested', 'result_viewed', 'error_shown']);
+  assert.ok(events.every((e) => e.journey_id === telemetry.journeyId && e.source_app === 'causal'));
+  assert.ok(events.every((e) => e.release_version === 'abc1234'));
+  assert.equal(events[0].properties.portal, 'causal');
+  assert.equal(headers['X-Product-request-id'], events[3].request_id);
+  assert.equal(events[5].properties.error_kind, 'timeout');
+});
+
+await check('instrumentation shares the site session and drops free text', async () => {
+  const { telemetry, sent, store } = telemetryWith('experimentation');
+  telemetry.caseStarted('demo', 'Not A Slug');
+  telemetry.runRequested('Free text method');
+  await telemetry.flush();
+  const [started, requested] = sent.flatMap((call) => call.events);
+  assert.deepEqual(started.properties, { start_kind: 'demo' });
+  assert.deepEqual(requested.properties, {});
+  assert.ok(store.has('scurve.telemetry.anonymous_id') && store.has('scurve.telemetry.session'));
+});
+
+await check('instrumentation maps transport errors to what the visitor saw', () => {
+  assert.equal(kit.errorKindFor('unavailable'), 'service_unavailable');
+  assert.equal(kit.errorKindFor('unauthorized'), 'auth');
+  assert.equal(kit.errorKindFor('request'), 'validation');
+  assert.equal(kit.errorKindFor(undefined), 'unknown');
+});
+
 // --- report ---------------------------------------------------------------
 
 console.log('@scurve/portal-kit — section 4 and section 5a contract\n');

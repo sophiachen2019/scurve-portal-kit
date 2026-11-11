@@ -174,6 +174,15 @@ tokens so one word means one thing across the system.
 settles: no timeout, an explicit `stop`, and a `pause` predicate so an
 operator's open dialog or focused field is left alone.
 
+## Instrumentation
+
+`createPortalTelemetry({ endpoint, app, release })` is the one browser client for the portal instrumentation
+standard (`portal_instrumentation_standard.md` in `autonomous-data-team`). Every portal reports the same lifecycle:
+`portalOpened`, `signedIn`, `caseStarted`, `stepViewed`, `runRequested`, `resultViewed`, `reportDownloaded` and
+`errorShown`, with the contract's enums as types. It is a no-op without a collector address, starts a journey per
+page load, shares the site's session identity, and `runRequested` returns the `X-Product-*` headers the backend
+reads to join its run events to the journey. `errorKindFor(error.kind)` maps a kit error to what the visitor saw.
+
 ## UX primitives
 
 Five composable primitives, from standards section 5a: shell chrome,
