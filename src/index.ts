@@ -206,3 +206,18 @@ export function createPortalClient(options: PortalClientOptions): PortalClient {
   const api = new ApiClient(options);
   return { api, auth: new AuthClient(api, options.auth) };
 }
+
+export {
+  createPortalTelemetry,
+  errorKindFor,
+  type AuthMethod,
+  type CorrelationHeaders,
+  type ErrorKind,
+  type LifecycleEvent,
+  type PortalApp,
+  type PortalTelemetry,
+  type PortalTelemetryOptions,
+  type ReportFormat,
+  type StartKind,
+  type TelemetryStorage,
+} from './instrumentation.js';
